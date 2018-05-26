@@ -16,23 +16,40 @@ def hash_block(block):
 
 
 def get_balance(participant):
+    # get all transactions from blockchain
+    # where participant is sender
     tx_sender = [
         [
             tx['amount']
             for tx in block['transactions']
-            if tx['sender'] == participant]
-        for block in blockchain]
+            if tx['sender'] == participant
+        ]
+        for block in blockchain
+    ]
+    # get all transactions from open transactions
+    # where participant is sender
+    open_tx_sender = [
+        tx['amount']
+        for tx in open_transactions
+        if tx['sender'] == participant
+    ]
+    tx_sender.append(open_tx_sender)
+
     amount_sent = 0
     for tx in tx_sender:
         if len(tx) > 0:
             amount_sent += tx[0]
 
+    # get all transactions from blockchain
+    # where participant is recipient
     tx_recipient = [
         [
             tx['amount']
             for tx in block['transactions']
-            if tx['recipient'] == participant]
-        for block in blockchain]
+            if tx['recipient'] == participant
+        ]
+        for block in blockchain
+    ]
     amount_received = 0
     for tx in tx_recipient:
         if len(tx) > 0:
@@ -47,16 +64,25 @@ def get_last_blockchain_value():
     return blockchain[-1]
 
 
+def verify_transaction(transaction):
+    """ Checks whether the sender has enough coins. """
+    sender_balance = get_balance(transaction['sender'])
+    return sender_balance >= transaction['amount']
+
+
 def add_transaction(recipient, sender=owner, amount=1.0):
     transaction = {
         'sender': sender,
         'recipient': recipient,
         'amount': amount
     }
-    open_transactions.append(transaction)
-    participants.add(sender)
-    participants.add(recipient)
-    
+    if verify_transaction(transaction):
+        open_transactions.append(transaction)
+        participants.add(sender)
+        participants.add(recipient)
+        return True
+    return False
+
 
 def mine_block():
     last_block = blockchain[-1]
@@ -117,7 +143,10 @@ while True:
     if user_choice == '1':
         tx_data = get_transaction_value()
         recipient, amount = tx_data
-        add_transaction(recipient, amount=amount)
+        if add_transaction(recipient, amount=amount):
+            print('Transaction added.')
+        else:
+            print('Transaction failed!')
         print(open_transactions)
     elif user_choice == '2':
         if mine_block():
@@ -141,6 +170,6 @@ while True:
     if not verify_chain():
         print('Invalid blockchain!')
         break
-    print(get_balance('Yurii'))
+    print('My balance - ' + str(get_balance('Yurii')))
 
 print('Done!')
