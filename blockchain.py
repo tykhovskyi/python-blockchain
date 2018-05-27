@@ -1,3 +1,5 @@
+import functools
+
 MINING_REWARD = 10
 
 genesis_block = {
@@ -34,11 +36,12 @@ def get_balance(participant):
         if tx['sender'] == participant
     ]
     tx_sender.append(open_tx_sender)
-
-    amount_sent = 0
-    for tx in tx_sender:
-        if len(tx) > 0:
-            amount_sent += tx[0]
+    amount_sent = functools.reduce(
+        lambda tx_sum, tx_amt:
+            tx_sum + tx_amt[0] if len(tx_amt) > 0 else 0,
+        tx_sender,
+        0
+    )
 
     # get all transactions from blockchain
     # where participant is recipient
@@ -50,10 +53,13 @@ def get_balance(participant):
         ]
         for block in blockchain
     ]
-    amount_received = 0
-    for tx in tx_recipient:
-        if len(tx) > 0:
-            amount_received += tx[0]
+    amount_received = functools.reduce(
+        lambda tx_sum, tx_amt:
+            tx_sum + tx_amt[0] if len(tx_amt) > 0 else 0,
+        tx_recipient,
+        0
+    )
+    
     return amount_received - amount_sent
 
 
@@ -146,13 +152,15 @@ while True:
     print('h: Manipulate the chain')
     print('q: Quit')
     user_choice = get_user_choice()
+    print('')
+
     if user_choice == '1':
         tx_data = get_transaction_value()
         recipient, amount = tx_data
         if add_transaction(recipient, amount=amount):
-            print('Transaction added.')
+            print('\nTransaction added.')
         else:
-            print('Transaction failed!')
+            print('\nTransaction failed!')
         print(open_transactions)
     elif user_choice == '2':
         if mine_block():
