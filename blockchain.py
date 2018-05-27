@@ -181,6 +181,6 @@ while True:
     if not verify_chain():
         print('Invalid blockchain!')
         break
-    print('My balance - ' + str(get_balance('Yurii')))
+    print('Balance of {}: {:6.2f}'.format(owner, get_balance('Yurii')))
 
 print('Done!')
