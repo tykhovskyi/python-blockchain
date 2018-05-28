@@ -7,7 +7,8 @@ MINING_REWARD = 10
 genesis_block = {
     'previous_hash': '',
     'index': 0,
-    'transactions': []
+    'transactions': [],
+    'proof': 100
 }
 blockchain = [genesis_block]
 open_transactions = []
@@ -22,7 +23,7 @@ def hash_block(block):
 def valid_proof(transactions, last_hash, proof):
     guess = (str(transactions) + str(last_hash) + str(proof)).encode()
     guess_hash = hl.sha256(guess).hexdigest()
-    print(guess_hash)
+    print(f'guess_hash: {guess_hash}')
 
     return guess_hash[0:2] == '00'
 
@@ -32,7 +33,7 @@ def proof_of_work():
     last_hash = hash_block(last_block)
     proof = 0
 
-    while valid_proof(open_transactions, last_hash, proof):
+    while not valid_proof(open_transactions, last_hash, proof):
         proof += 1
 
     return proof
@@ -91,6 +92,19 @@ def get_last_blockchain_value():
     return blockchain[-1]
 
 
+def verify_chain():
+    print('  verify_chain()')
+    for (index, block) in enumerate(blockchain):
+        if index == 0:
+            continue
+        if block['previous_hash'] != hash_block(blockchain[index - 1]):
+            return False
+        if not valid_proof(block['transactions'][:-1], block['previous_hash'], block['proof']):
+            print('Proof of work is invalid!')
+            return False
+    return True
+
+
 def verify_transaction(transaction):
     """ Checks whether the sender has enough coins. """
     sender_balance = get_balance(transaction['sender'])
@@ -112,9 +126,10 @@ def add_transaction(recipient, sender=owner, amount=1.0):
 
 
 def mine_block():
+    """ Create a new block and add open transactions to it. """
     last_block = blockchain[-1]
     hashed_block = hash_block(last_block)
-    print(hashed_block)
+    proof = proof_of_work()
     reward_transaction = {
         'sender': 'MINING',
         'recipient': owner,
@@ -125,7 +140,8 @@ def mine_block():
     block = {
         'previous_hash': hashed_block,
         'index': len(blockchain),
-        'transactions': copied_transactions
+        'transactions': copied_transactions,
+        'proof': proof
     }
     blockchain.append(block)
     return True
@@ -149,15 +165,6 @@ def print_blockchain_elements():
         print(block)
     else:
         print('-' * 20)
-
-
-def verify_chain():
-    for (index, block) in enumerate(blockchain):
-        if index == 0:
-            continue
-        if block['previous_hash'] != hash_block(blockchain[index - 1]):
-            return False
-    return True
 
 
 def verify_transactions():
