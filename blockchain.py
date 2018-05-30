@@ -8,18 +8,25 @@ from hash_util import hash_string_256, hash_block
 
 MINING_REWARD = 10
 
-genesis_block = {
-    'previous_hash': '',
-    'index': 0,
-    'transactions': [],
-    'proof': 100
-}
-blockchain = [genesis_block]
+blockchain = []
 open_transactions = []
 owner = 'Yurii'
-participants = {'Yurii'}
+participants = {owner}
 data_file_path = 'tmp_data/blockchain.txt'
 
+
+def initialize_new_blockchain():
+    global blockchain
+    global open_transactions
+    genesis_block = {
+        'previous_hash': '',
+        'index': 0,
+        'transactions': [],
+        'proof': 100
+    }
+    blockchain = [genesis_block]
+    open_transactions = []
+    
 
 def load_data():
     try:
@@ -62,22 +69,25 @@ def load_data():
                 updated_transactions.append(updated_transaction)
             open_transactions = updated_transactions
     except IOError:
-        print('File not found!')
+        initialize_new_blockchain()
 
 
 load_data()
 
 
 def save_data():
-    with open(data_file_path, mode='w') as f:
-        f.write(json.dumps(blockchain))
-        f.write('\n')
-        f.write(json.dumps(open_transactions))
-        # data = {
-        #     'chain': blockchain,
-        #     'ot': open_transactions
-        # }
-        # f.write(pickle.dumps(data))
+    try:
+        with open(data_file_path, mode='w') as f:
+            f.write(json.dumps(blockchain))
+            f.write('\n')
+            f.write(json.dumps(open_transactions))
+            # data = {
+            #     'chain': blockchain,
+            #     'ot': open_transactions
+            # }
+            # f.write(pickle.dumps(data))
+    except IOError:
+        print('Saving failed!')
 
 
 
