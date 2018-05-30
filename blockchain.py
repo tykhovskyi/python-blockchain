@@ -2,6 +2,7 @@ from collections import OrderedDict
 from functools import reduce
 import json
 import hashlib as hl
+import pickle
 
 from hash_util import hash_string_256, hash_block
 
@@ -17,53 +18,63 @@ blockchain = [genesis_block]
 open_transactions = []
 owner = 'Yurii'
 participants = {'Yurii'}
-data_file_path = 'tmp_data/blockchain.txt'
+data_file_path = 'tmp_data/blockchain.p'
 
 
 def load_data():
-    with open(data_file_path, mode='r') as f:
-        file_content = f.readlines()
+    with open(data_file_path, mode='rb') as f:
+        file_content = pickle.loads(f.read())
+        
         global blockchain
-        blockchain = json.loads(file_content[0][:-1])
-        updated_blockchain = []
-        for block in blockchain:
-            updated_block = {
-                'previous_hash': block['previous_hash'],
-                'index':  block['index'],
-                'proof': block['proof'],
-                'transactions': [
-                    OrderedDict([
-                        ('sender', tx['sender']),
-                        ('recipient', tx['recipient']),
-                        ('amount', tx['amount'])
-                    ])
-                    for tx in block['transactions']
-                ]
-            }
-            updated_blockchain.append(updated_block)
-        blockchain = updated_blockchain
-
         global open_transactions
-        open_transactions = json.loads(file_content[1])
-        updated_transactions = []
-        for tx in open_transactions:
-            updated_transaction = OrderedDict([
-                ('sender', tx['sender']),
-                ('recipient', tx['recipient']),
-                ('amount', tx['amount'])
-            ])
-            updated_transactions.append(updated_transaction)
-        open_transactions = updated_transactions
+        blockchain = file_content['chain']
+        open_transactions = file_content['ot']
+        # file_content = f.readlines()
+        # global blockchain
+        # blockchain = json.loads(file_content[0][:-1])
+        # updated_blockchain = []
+        # for block in blockchain:
+        #     updated_block = {
+        #         'previous_hash': block['previous_hash'],
+        #         'index':  block['index'],
+        #         'proof': block['proof'],
+        #         'transactions': [
+        #             OrderedDict([
+        #                 ('sender', tx['sender']),
+        #                 ('recipient', tx['recipient']),
+        #                 ('amount', tx['amount'])
+        #             ])
+        #             for tx in block['transactions']
+        #         ]
+        #     }
+        #     updated_blockchain.append(updated_block)
+        # blockchain = updated_blockchain
+
+        # open_transactions = json.loads(file_content[1])
+        # updated_transactions = []
+        # for tx in open_transactions:
+        #     updated_transaction = OrderedDict([
+        #         ('sender', tx['sender']),
+        #         ('recipient', tx['recipient']),
+        #         ('amount', tx['amount'])
+        #     ])
+        #     updated_transactions.append(updated_transaction)
+        # open_transactions = updated_transactions
 
 
 load_data()
 
 
 def save_data():
-    with open(data_file_path, mode='w') as f:
-        f.write(json.dumps(blockchain))
-        f.write('\n')
-        f.write(json.dumps(open_transactions))
+    with open(data_file_path, mode='wb') as f:
+        # f.write(json.dumps(blockchain))
+        # f.write('\n')
+        # f.write(json.dumps(open_transactions))
+        data = {
+            'chain': blockchain,
+            'ot': open_transactions
+        }
+        f.write(pickle.dumps(data))
 
 
 
