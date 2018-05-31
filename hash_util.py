@@ -12,7 +12,8 @@ def hash_block(block):
     Arguments:
         :block: The block that should be hashed.
     """
+    hashable_block = block.__dict__.copy()
     return hash_string_256(
-        json.dumps(block, sort_keys=True).encode()
+        json.dumps(hashable_block, sort_keys=True).encode()
     )
 

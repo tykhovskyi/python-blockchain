@@ -29,10 +29,7 @@ def load_data():
         with open(data_file_path, mode='r') as f:
             global blockchain
             global open_transactions
-
-            # file_content = pickle.loads(f.read())
-            # blockchain = file_content['chain']
-            # open_transactions = file_content['ot']
+            
             file_content = f.readlines()
             global blockchain
             blockchain = json.loads(file_content[0][:-1])
@@ -50,8 +47,8 @@ def load_data():
                     block['index'],
                     block['previous_hash'],
                     converted_tx,
-                    block['proof',
-                    block['timestamp']]
+                    block['proof'],
+                    block['timestamp']
                 )
                 updated_blockchain.append(updated_block)
             blockchain = updated_blockchain
@@ -66,7 +63,7 @@ def load_data():
                 ])
                 updated_transactions.append(updated_transaction)
             open_transactions = updated_transactions
-    except IOError:
+    except (IOError, IndexError):
         initialize_new_blockchain()
 
 
@@ -76,14 +73,13 @@ load_data()
 def save_data():
     try:
         with open(data_file_path, mode='w') as f:
-            f.write(json.dumps(blockchain))
+            saveable_chain = [
+                block.__dict__
+                for block in blockchain
+            ]
+            f.write(json.dumps(saveable_chain))
             f.write('\n')
             f.write(json.dumps(open_transactions))
-            # data = {
-            #     'chain': blockchain,
-            #     'ot': open_transactions
-            # }
-            # f.write(pickle.dumps(data))
     except IOError:
         print('Saving failed!')
 
