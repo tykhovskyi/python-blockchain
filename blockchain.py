@@ -12,7 +12,6 @@ MINING_REWARD = 10
 blockchain = []
 open_transactions = []
 owner = 'Yurii'
-participants = {owner}
 data_file_path = 'tmp_data/blockchain.txt'
 
 
@@ -235,8 +234,7 @@ while True:
     print('1: Add a new transaction vallue')
     print('2: Mine a new block')
     print('3: Output the blockchain blocks')
-    print('4: Output participants')
-    print('5: Check transaction validity')
+    print('4: Check transaction validity')
     print('q: Quit')
     user_choice = get_user_choice()
     print('')
@@ -256,8 +254,6 @@ while True:
     elif user_choice == '3':
         print_blockchain_elements()
     elif user_choice == '4':
-        print(participants)
-    elif user_choice == '5':
         if verify_transactions():
             print('All transactions are valid')
         else:
