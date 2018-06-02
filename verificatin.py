@@ -15,12 +15,13 @@ class Verification:
             tx.to_ordered_dict()
             for tx in transactions
         ]
-        guess = (str(ordered_transactions) + str(last_hash) + str(proof)).encode()
+        guess = (str(ordered_transactions) +
+                 str(last_hash) + str(proof)).encode()
         guess_hash = hash_string_256(guess)
         print(f'guess_hash: {guess_hash}')
 
         return guess_hash[0:2] == '00'
-    
+
     def verify_chain(self, blockchain):
         """ Verify the current blockchein and return True if it's valid. """
         print('  verify_chain()')
@@ -34,15 +35,14 @@ class Verification:
                 return False
         return True
 
-
     def verify_transaction(self, transaction, get_balance):
         """ Checks whether the sender has enough coins. """
-        sender_balance = get_balance(transaction.sender)
+        sender_balance = get_balance()
         return sender_balance >= transaction.amount
-    
+
     def verify_transactions(self, open_transactions, get_balance):
         """ Verifies all open transactions. """
         return all([
-            self.verify_transaction(tx, get_balance) 
+            self.verify_transaction(tx, get_balance)
             for tx in open_transactions
         ])

@@ -15,11 +15,12 @@ data_file_path = 'tmp_data/blockchain.txt'
 
 class Blockchain:
 
-    def __init__(self):
+    def __init__(self, hosting_node_id):
         genesis_block = Block(0, '', [], 0, 0)
         self.chain = [genesis_block]
         self.open_transactions = []
         self.load_data()
+        self.hosting_node = hosting_node_id
 
     def load_data(self):
         """Initialize blockchain + open transactions data from a file."""
@@ -93,11 +94,9 @@ class Blockchain:
 
         return proof
 
-    def get_balance(self, participant):
-        """Calculate and return the balance for a participant.
-
-        Arguments:
-            :participant: The person for whom to calculate the balance."""
+    def get_balance(self):
+        """Calculate and return the balance for a participant."""
+        participant = self.hosting_node
         # get all transactions from blockchain
         # where participant is sender
         tx_sender = [
@@ -164,12 +163,12 @@ class Blockchain:
             return True
         return False
 
-    def mine_block(self, node):
+    def mine_block(self):
         """ Create a new block and add open transactions to it. """
         last_block = self.chain[-1]
         hashed_block = hash_block(last_block)
         proof = self.proof_of_work()
-        reward_transaction = Transaction('MINING', node, MINING_REWARD)
+        reward_transaction = Transaction('MINING', self.hosting_node, MINING_REWARD)
 
         copied_transactions = self.open_transactions[:]
         copied_transactions.append(reward_transaction)
@@ -177,5 +176,8 @@ class Blockchain:
         block = Block(len(self.chain), hashed_block,
                       copied_transactions, proof)
         self.chain.append(block)
+
+        self.open_transactions = []
+        self.save_data()
 
         return True
