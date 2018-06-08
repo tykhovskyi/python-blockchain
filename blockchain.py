@@ -3,9 +3,9 @@ import json
 # import pickle
 
 from block import Block
-from hash_util import hash_block
 from transaction import Transaction
-from verificatin import Verification
+from utility.hash_util import hash_block
+from utility.verificatin import Verification
 
 
 # The reward we give to miners (for creating a new block)
