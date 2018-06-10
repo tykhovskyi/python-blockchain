@@ -76,5 +76,6 @@ class Node:
         print('Done!')
 
 
-node = Node()
-node.listen_for_input()
+if __name__ == '__main__':
+    node = Node()
+    node.listen_for_input()
