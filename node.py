@@ -1,15 +1,16 @@
 from uuid import uuid4
 
 from blockchain import Blockchain
+from wallet import Wallet
 from utility.verificatin import Verification
 
 
 class Node:
 
     def __init__(self):
-        # self.id = str(uuid4())
-        self.id = 'Yurii'
-        self.blockchain = Blockchain(self.id)
+        # self.wallet.public_key = str(uuid4())
+        self.wallet = Wallet()
+        self.blockchain = Blockchain(self.wallet.public_key)
 
     def get_transaction_value(self):
         """ Returns the input of the user (a new transaction amount) as a float. """
@@ -36,6 +37,8 @@ class Node:
             print('2: Mine a new block')
             print('3: Output the blockchain blocks')
             print('4: Check transaction validity')
+            print('5: Create wallet')
+            print('6: Load wallet')
             print('q: Quit')
             user_choice = self.get_user_choice()
             print('')
@@ -43,7 +46,7 @@ class Node:
             if user_choice == '1':
                 tx_data = self.get_transaction_value()
                 recipient, amount = tx_data
-                if self.blockchain.add_transaction(recipient, self.id, amount=amount):
+                if self.blockchain.add_transaction(recipient, self.wallet.public_key, amount=amount):
                     print('\nTransaction added.')
                 else:
                     print('\nTransaction failed!')
@@ -61,6 +64,9 @@ class Node:
                 else:
                     print('There are invalid transactions!')
 
+            elif user_choice == '5':
+                self.wallet.create_keys()
+
             elif user_choice == 'q':
                 break
 
@@ -71,7 +77,7 @@ class Node:
                 print('Invalid blockchain!')
                 break
             print('Balance of {}: {:6.2f}'.format(
-                self.id, self.blockchain.get_balance()))
+                self.wallet.public_key, self.blockchain.get_balance()))
 
         print('Done!')
 

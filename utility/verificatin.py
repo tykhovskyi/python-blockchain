@@ -19,14 +19,14 @@ class Verification:
         guess = (str(ordered_transactions) +
                  str(last_hash) + str(proof)).encode()
         guess_hash = hash_string_256(guess)
-        print(f'guess_hash: {guess_hash}')
+        # print(f'guess_hash: {guess_hash}')
 
         return guess_hash[0:2] == '00'
 
     @classmethod
     def verify_chain(cls, blockchain):
         """ Verify the current blockchein and return True if it's valid. """
-        print('  verify_chain()')
+        # print('  verify_chain()')
         for (index, block) in enumerate(blockchain):
             if index == 0:
                 continue
