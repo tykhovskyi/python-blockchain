@@ -17,20 +17,23 @@ class Wallet:
 
     def generate_keys(self):
         key = RSA.generate(2048)
-        private_key = key.export_key()
-        public_key = key.publickey().export_key()
+        private_key = key
+        public_key = key.publickey()
 
         return (self.stringify_key(private_key), self.stringify_key(public_key))
 
     @staticmethod
     def stringify_key(key):
-        return binascii.hexlify(key.exportKey(format='DER'))
+        return binascii.hexlify(key.exportKey(format='DER')).decode('ascii')
 
 
 # print('---test')
 
-# key = RSA.generate(1024)
-# private_key = key.export_key()
-# # private_key_str = binascii.hexlify(key.exportKey(format='DER').decode('ascii'))
-# private_key_str = binascii.hexlify(key.exportKey(format='DER'))
+# wallet = Wallet()
+# wallet.create_keys()
+# private_key_str = wallet.public_key
+# public_key_str = wallet.public_key
+# print('private_key_str')
 # print(private_key_str)
+# print('public_key_str')
+# print(public_key_str)
