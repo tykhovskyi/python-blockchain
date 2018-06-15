@@ -1,4 +1,6 @@
 import binascii
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 
 
@@ -36,10 +38,21 @@ class Wallet:
         private_key = key
         public_key = key.publickey()
 
-        return (self.stringify_key(private_key), self.stringify_key(public_key))
+        return (self.key_to_string(private_key), self.key_to_string(public_key))
+
+    def sign_transaction(self, sender, recipient, amount):
+        signer = pkcs1_15.new(self.string_to_key(self.private_key))
+        h = SHA256.new((str(sender) + str(recipient) + str(amount)).encode('utf8'))
+        signature = signer.sign(h)
+
+        return binascii.hexlify(signature).decode('ascii')
 
     @staticmethod
-    def stringify_key(key):
+    def string_to_key(str):
+        return RSA.import_key(binascii.unhexlify(str))
+
+    @staticmethod
+    def key_to_string(key):
         return binascii.hexlify(key.exportKey(format='DER')).decode('ascii')
 
 
@@ -47,9 +60,13 @@ class Wallet:
 
 # wallet = Wallet()
 # wallet.create_keys()
-# private_key_str = wallet.public_key
-# public_key_str = wallet.public_key
-# print('private_key_str')
-# print(private_key_str)
-# print('public_key_str')
-# print(public_key_str)
+
+# # private_key_str = wallet.public_key
+# # public_key_str = wallet.public_key
+# # print('private_key_str')
+# # print(private_key_str)
+# # print('public_key_str')
+# # print(public_key_str)
+
+# signature = wallet.sign_transaction('sender1', 'recipient1', 101)
+# print(signature)
