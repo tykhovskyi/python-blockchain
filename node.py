@@ -157,5 +157,12 @@ def get_chain():
     return jsonify(dict_chain), 200
 
 
+@app.route('/transactions', methods=['GET'])
+def get_open_transactions():
+    transactions = blockchain.get_open_transactions()
+    dict_transactions = [tx.__dict__ for tx in transactions]
+    return jsonify(dict_transactions), 200
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
