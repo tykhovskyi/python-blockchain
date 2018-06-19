@@ -102,6 +102,9 @@ class Blockchain:
 
     def get_balance(self):
         """Calculate and return the balance for a participant."""
+        if self.hosting_node == None:
+            return None
+
         participant = self.hosting_node
         # get all transactions from blockchain
         # where participant is sender
