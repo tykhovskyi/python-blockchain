@@ -85,7 +85,7 @@
                     </div>
                 </div>
                 <div class="col text-right">
-                    <h2>Funds: {{ funds }}</h2>
+                    <h2>Funds: {{ funds.toFixed(2) }}</h2>
                 </div>
             </div>
             <hr>
@@ -227,47 +227,89 @@
                 onCreateWallet: function () {
                     // Send Http request to create a new wallet (and return keys)
                     const vm = this;
+                    vm.dataLoading = true;
                     axios.post('/wallet')
                         .then(function (response) {
                             vm.error = null;
                             vm.success = 'Wallet created. Public Key: ' + response.data.public_key +
                                 ', Private Key: ' + response.data.private_key;
+                            vm.wallet = {
+                                public_key: response.data.public_key,
+                                private_key: response.data.private_key
+                            };
+                            vm.funds = response.data.funds
+                            vm.dataLoading = false;
                         })
                         .catch(function (error) {
                             vm.success = null;
-                            vm.error = error.data.message;
+                            vm.error = error.response.data.message;
+                            vm.wallet = null;
+                            vm.dataLoading = false;
                         });
                 },
                 onLoadWallet: function () {
                     // Send Http request to load an existing wallet (from a file on the server)
-                    
+                    const vm = this;
+                    vm.dataLoading = true;
+                    axios.get('/wallet')
+                        .then(function (response) {
+                            vm.error = null;
+                            vm.success = 'Wallet Loaded. Public Key: ' + response.data.public_key +
+                                ', Private Key: ' + response.data.private_key;
+                            vm.wallet = {
+                                public_key: response.data.public_key,
+                                private_key: response.data.private_key
+                            };
+                            vm.funds = response.data.funds
+                            vm.dataLoading = false;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                            vm.wallet = null;
+                            vm.dataLoading = false;
+                        });
                 },
                 onSendTx: function () {
                     // Send Transaction to backend
-                    if (Math.random() > 0.5) {
-                        this.error = null
-                        this.success = 'Successfully stored transaction!'
-                        this.funds = this.funds - this.outgoingTx.amount
-                    } else {
-                        this.success = null;
-                        this.error = 'Something went wrong!'
-                    }
+                    const vm = this;
+                    vm.dataLoading = true;
+                    axios.post('/transaction', {
+                        recipient: vm.outgoingTx.recipient,
+                        amount: vm.outgoingTx.amount
+                    })
+                        .then(function (response) {
+                            console.log(response.data);
+                            vm.error = null;
+                            vm.success = response.data.message;
+                            vm.funds = response.data.funds
+                            vm.dataLoading = false;
+                        })
+                        .catch(function (error) {
+                            vm.success = null;
+                            vm.error = error.response.data.message;
+                            vm.dataLoading = false;
+                        });
                 },
                 onMine: function() {
-                    if (Math.random() > 0.5) {
-                        this.error = null
-                        this.success = 'Successfully mined coins!'
-                        this.funds = this.funds + 10
-                    } else {
-                        this.success = null;
-                        this.error = 'Something went wrong!'
-                    }
+                    const vm = this;
+                    vm.dataLoading = true;
+                    axios.post('/mine')
+                        .then(function (response) {
+                            console.log(response.data);
+                            vm.error = null;
+                            vm.success = response.data.message;
+                            vm.funds = response.data.funds
+                            vm.dataLoading = false;
+                        })
+                        .catch(function (error) {
+                        });
                 },
                 onLoadData: function () {
                     if (this.view === 'chain') {
                         // Load blockchain data
                         const vm = this;
-                        this.dataLoading = true;
+                        vm.dataLoading = true;
                         axios.get('/chain')
                             .then(function (response) {
                                 vm.blockchain = response.data;
@@ -280,7 +322,7 @@
                     } else {
                         // Load transaction data
                         const vm = this;
-                        this.dataLoading = true;
+                        vm.dataLoading = true;
                         axios.get('/transactions')
                             .then(function (response) {
                                 vm.openTransactions = response.data;
