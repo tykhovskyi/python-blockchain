@@ -164,6 +164,13 @@ def get_open_transactions():
     return jsonify(dict_transactions), 200
 
 
+@app.route('/nodes', methods=['GET'])
+def get_nodes():
+    response = {
+        'all_nodes': blockchain.get_peer_nodes()
+    }
+    return jsonify(response), 200
+
 @app.route('/node', methods=['POST'])
 def add_node():
     values =request.get_json()
