@@ -1,5 +1,7 @@
 from functools import reduce
+
 import json
+import requests
 # import pickle
 
 from block import Block
@@ -178,6 +180,8 @@ class Blockchain:
         if Verification.verify_transaction(transaction, self.get_balance):
             self.__open_transactions.append(transaction)
             self.save_data()
+            if self.broadcast_transaction(transaction) == False:
+                return False
             return True
         return False
 
@@ -210,7 +214,7 @@ class Blockchain:
 
     def add_peer_node(self, node):
         """Adds a new node to the peer node set.
-        
+
         Arguments:
             :node: The node URL which should be added.
         """
@@ -219,7 +223,7 @@ class Blockchain:
 
     def remove_peer_node(self, node):
         """Removes a node from the peer node set.
-        
+
         Arguments:
             :node: The node URL which should be removeded.
         """
@@ -229,3 +233,22 @@ class Blockchain:
     def get_peer_nodes(self):
         """Return a list of all connected peer nodes."""
         return list(self.__peer_nodes)
+
+    def broadcast_transaction(self, transaction):
+        for node in self.__peer_nodes:
+            url = 'http://{}/broadcast-transaction'.format(node)
+            
+            try:
+                response = requests.post(url, json={
+                    'sender': transaction.sender,
+                    'recipient': transaction.recipient,
+                    'amount': transaction.amount,
+                    'signature': transaction.signature
+                })
+                if response.status_code == 400 or response.status_code == 500:
+                    print('Transaction declined, need resolving!')
+                    return False
+            except requests.exceptions.ConnectionError:
+                continue
+
+        return True
