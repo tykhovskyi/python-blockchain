@@ -32,6 +32,10 @@ class Blockchain:
     def get_open_transactions(self):
         return self.__open_transactions[:]
 
+    def get_last_index(self):
+        """Returns the index of the last block."""
+        return self.__chain[-1].index
+
     def load_data(self):
         """Initialize blockchain + open transactions data from a file."""
         try:
@@ -216,6 +220,35 @@ class Blockchain:
 
         return block
 
+    def add_block(self, block):
+        transactions = [
+            Transaction(tx['sender'], 
+                        tx['recipient'], 
+                        tx['signature'], 
+                        tx['amount'])
+            for tx in block['transactions']
+        ]
+
+        proof_is_valid = Verification.valid_proof(transactions, 
+                                                  block['previous_hash'], 
+                                                  block['proof'])
+        if not proof_is_valid:
+            return False
+
+        hashes_match = hash_block(self.__chain[-1]) == block['previous_hash']
+        if not hashes_match:
+            return False
+
+        converted_block = Block(block['index'], 
+                                block['previous_hash'], 
+                                block['transactions'], 
+                                block['proof'], 
+                                block['timestamp'],)
+        self.__chain.append(converted_block)
+        self.save_data()
+        return True
+
+
     def add_peer_node(self, node):
         """Adds a new node to the peer node set.
 
@@ -241,7 +274,7 @@ class Blockchain:
     def broadcast_transaction(self, transaction):
         for node in self.__peer_nodes:
             url = 'http://{}/broadcast-transaction'.format(node)
-            
+
             try:
                 response = requests.post(url, json={
                     'sender': transaction.sender,

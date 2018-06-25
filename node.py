@@ -139,6 +139,26 @@ def broadcast_transaction():
         return jsonify(response), 500
 
 
+@app.route('/broadcast-block', methods=['POST'])
+def broadcast_block():
+    request_json = request.get_json()
+    if not request_json:
+        response = {'message': 'No data found!'}
+        return jsonify(response), 400
+    if 'block' not in request_json:
+        response = {'message': 'Some data is missing!'}
+        return jsonify(response), 400
+    
+    block = request_json['block']
+    if block['index'] == blockchain.get_last_index() + 1:
+        blockchain.add_block(block)
+    elif block['index'] > blockchain.get_last_index():
+        pass
+    else:
+        response = {'message': 'Blockchain seems to be shorter, block not added!'}
+        return jsonify(response), 409
+
+
 @app.route('/mine', methods=['POST'])
 def mine():
     mined_block = blockchain.mine_block()
