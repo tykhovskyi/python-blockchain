@@ -214,9 +214,10 @@ class Blockchain:
                       copied_transactions, proof)
 
         self.__chain.append(block)
-
         self.__open_transactions = []
+
         self.save_data()
+        self.broadcast_block(block)
 
         return block
 
@@ -229,7 +230,7 @@ class Blockchain:
             for tx in block['transactions']
         ]
 
-        proof_is_valid = Verification.valid_proof(transactions, 
+        proof_is_valid = Verification.valid_proof(transactions[:-1], 
                                                   block['previous_hash'], 
                                                   block['proof'])
         if not proof_is_valid:
@@ -241,13 +242,12 @@ class Blockchain:
 
         converted_block = Block(block['index'], 
                                 block['previous_hash'], 
-                                block['transactions'], 
+                                transactions, 
                                 block['proof'], 
                                 block['timestamp'],)
         self.__chain.append(converted_block)
         self.save_data()
         return True
-
 
     def add_peer_node(self, node):
         """Adds a new node to the peer node set.
@@ -284,6 +284,25 @@ class Blockchain:
                 })
                 if response.status_code == 400 or response.status_code == 500:
                     print('Transaction declined, need resolving!')
+                    return False
+            except requests.exceptions.ConnectionError:
+                continue
+
+        return True
+
+    def broadcast_block(self, block):
+        converted_block = block.__dict__.copy()
+        converted_block['transactions'] = [
+            tx.__dict__
+            for tx in converted_block['transactions']
+        ]
+        for node in self.__peer_nodes:
+            url = 'http://{}/broadcast-block'.format(node)
+
+            try:
+                response = requests.post(url, json={'block': converted_block})
+                if response.status_code == 400 or response.status_code == 500:
+                    print('Block declined, need resolving!')
                     return False
             except requests.exceptions.ConnectionError:
                 continue
