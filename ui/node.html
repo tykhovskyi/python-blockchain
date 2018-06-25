@@ -97,8 +97,16 @@
                         <div></div>
                     </div>
                 </div>
-                <div class="col text-right">
+                <div v-if="wallet" class="col text-right">
                     <h2>Funds: {{ funds.toFixed(2) }}</h2>
+                </div>
+            </div>
+            <div v-if="wallet" class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="wallet-key">Wallet Key</label>
+                        <input v-model="wallet.public_key" readonly type="text" class="form-control" id="wallet-key">
+                    </div>
                 </div>
             </div>
             <hr>
@@ -244,8 +252,7 @@
                     axios.post('/wallet')
                         .then(function (response) {
                             vm.error = null;
-                            vm.success = 'Wallet created. Public Key: ' + response.data.public_key +
-                                ', Private Key: ' + response.data.private_key;
+                            vm.success = 'Wallet created.';
                             vm.wallet = {
                                 public_key: response.data.public_key,
                                 private_key: response.data.private_key
@@ -267,8 +274,7 @@
                     axios.get('/wallet')
                         .then(function (response) {
                             vm.error = null;
-                            vm.success = 'Wallet Loaded. Public Key: ' + response.data.public_key +
-                                ', Private Key: ' + response.data.private_key;
+                            vm.success = 'Wallet Loaded.';
                             vm.wallet = {
                                 public_key: response.data.public_key,
                                 private_key: response.data.private_key
