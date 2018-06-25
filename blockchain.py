@@ -108,12 +108,15 @@ class Blockchain:
 
         return proof
 
-    def get_balance(self):
+    def get_balance(self, sender=None):
         """Calculate and return the balance for a participant."""
-        if self.public_key == None:
-            return None
+        if sender == None:
+            if self.public_key == None:
+                return None
+            participant = self.public_key
+        else:
+            participant = sender
 
-        participant = self.public_key
         # get all transactions from blockchain
         # where participant is sender
         tx_sender = [
@@ -164,7 +167,7 @@ class Blockchain:
             return None
         return self.__chain[-1]
 
-    def add_transaction(self, recipient, sender, signature, amount=1.0):
+    def add_transaction(self, recipient, sender, signature, amount=1.0, is_receiving=False):
         """ Append a new value as well as the last blockchain value to the blockchain.
 
         Arguments:
@@ -180,8 +183,9 @@ class Blockchain:
         if Verification.verify_transaction(transaction, self.get_balance):
             self.__open_transactions.append(transaction)
             self.save_data()
-            if self.broadcast_transaction(transaction) == False:
-                return False
+            if not is_receiving:
+                if self.broadcast_transaction(transaction) == False:
+                    return False
             return True
         return False
 

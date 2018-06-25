@@ -76,15 +76,11 @@ def get_balance():
 @app.route('/transaction', methods=['POST'])
 def add_transaction():
     if wallet.public_key == None:
-        response = {
-            'message': 'No wallet set up!'
-        }
+        response = {'message': 'No wallet set up!'}
         return jsonify(response), 400
     values = request.get_json()
     if not values:
-        response = {
-            'message': 'No data found.'
-        }
+        response = {'message': 'No data found.'}
         return jsonify(response), 400
     required_fields = ['recipient', 'amount']
     if not all(field in values for field in required_fields):
@@ -92,7 +88,7 @@ def add_transaction():
             'message': "Required data ('recipient' and 'amount') is missing!"
         }
         return jsonify(response), 400
-    
+
     recipient = values['recipient']
     amount = values['amount']
     signature = wallet.sign_transaction(wallet.public_key,
@@ -115,9 +111,31 @@ def add_transaction():
         }
         return jsonify(response), 201
     else:
-        response = {
-            'message': 'Adding of transaction failed!'
-        }
+        response = {'message': 'Adding of transaction failed!'}
+        return jsonify(response), 500
+
+
+@app.route('/broadcast-transaction', methods=['POST'])
+def broadcast_transaction():
+    request_json = request.get_json()
+    if not request_json:
+        response = {'message': 'No data found!'}
+        return jsonify(response), 400
+    required = ['sender', 'recipient', 'amount', 'signature']
+    if not all(key in request_json for key in required):
+        response = {'message': 'Some data is missing!'}
+        return jsonify(response), 400
+
+    success = blockchain.add_transaction(request_json['recipient'],
+                                         request_json['sender'],
+                                         request_json['signature'],
+                                         request_json['amount'],
+                                         is_receiving=True)
+    if success:
+        response = {'message': 'Successfully added new transaction.'}
+        return jsonify(response), 201
+    else:
+        response = {'message': 'Adding of transaction failed!'}
         return jsonify(response), 500
 
 
@@ -174,16 +192,17 @@ def get_nodes():
     }
     return jsonify(response), 200
 
+
 @app.route('/node', methods=['POST'])
 def add_node():
-    values =request.get_json()
+    values = request.get_json()
 
     if not values:
         response = {
             'message': 'No data attached!'
         }
         return jsonify(response), 400
-    
+
     if 'node' not in values:
         response = {
             'message': 'No node data found!'
