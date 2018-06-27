@@ -148,7 +148,7 @@ class Blockchain:
 
     def add_block(self, block):
         incoming_block = Block.from_dictionary(block)
-
+        
         proof_is_valid = Verification.valid_proof(incoming_block.transactions[:-1],
                                                   incoming_block.previous_hash,
                                                   incoming_block.proof)
@@ -187,6 +187,37 @@ class Blockchain:
     def get_peer_nodes(self):
         """Return a list of all connected peer nodes."""
         return list(self.__peer_nodes)
+
+    def resolve(self):
+        winner_chain = self.__chain
+        replaced = False
+
+        for node in self.__peer_nodes:
+            url = 'http://{}/chain'.format(node)
+            try:
+                response = requests.get(url)
+                external_chain = [
+                    Block.from_dictionary(block)
+                    for block in response.json()
+                ]
+                external_chain_lenght = len(external_chain)
+                winner_chain_length = len(winner_chain)
+                external_chain_valid = Verification.verify_chain(external_chain)
+
+                if external_chain_lenght > winner_chain_length and external_chain_valid:
+                    winner_chain = external_chain
+                    replaced = True
+
+            except requests.exceptions.ConnectionError:
+                continue
+
+        self.resolve_conflicts = False
+        self.__chain = winner_chain
+        if replaced:
+            self.__open_transactions = []
+        self.__save_data()
+
+        return replaced
 
     def __load_data(self):
         """Initialize blockchain + open transactions data from a file."""

@@ -270,6 +270,17 @@ def remove_node(node_url):
     return jsonify(response), 200
 
 
+@app.route('/resolve_conflicts', methods=['POST'])
+def resolve_conflicts():
+    replaced = blockchain.resolve()
+    if replaced:
+        response = {'message': 'Chain was replaced.'}
+    else:
+        response = {'message': 'Chain was conserved.'}
+    
+    return jsonify(response), 200
+
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
