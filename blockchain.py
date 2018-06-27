@@ -25,7 +25,7 @@ class Blockchain:
         self.public_key = public_key
         self.node_id = node_id
         self.resolve_conflicts = False
-        self.load_data()
+        self.__load_data()
 
     def get_chain(self):
         return self.__chain[:]
@@ -36,82 +36,6 @@ class Blockchain:
     def get_last_index(self):
         """Returns the index of the last block."""
         return self.__chain[-1].index
-
-    def load_data(self):
-        """Initialize blockchain + open transactions data from a file."""
-        try:
-            with open('tmp_data/blockchain-{}.txt'.format(self.node_id), mode='r') as f:
-                file_content = f.readlines()
-                blockchain = json.loads(file_content[0][:-1])
-                updated_blockchain = []
-                for block in blockchain:
-                    converted_tx = [
-                        Transaction(
-                            tx['sender'], tx['recipient'], tx['signature'], tx['amount'])
-                        for tx in block['transactions']
-                    ]
-                    updated_block = Block(
-                        block['index'],
-                        block['previous_hash'],
-                        converted_tx,
-                        block['proof'],
-                        block['timestamp']
-                    )
-                    updated_blockchain.append(updated_block)
-                self.__chain = updated_blockchain
-
-                open_transactions = json.loads(file_content[1][:-1])
-                updated_transactions = []
-                for tx in open_transactions:
-                    updated_transaction = Transaction(
-                        tx['sender'], tx['recipient'], tx['signature'], tx['amount'])
-                    updated_transactions.append(updated_transaction)
-                self.__open_transactions = updated_transactions
-
-                peer_nodes = json.loads(file_content[2])
-                self.__peer_nodes = set(peer_nodes)
-        except (IOError, IndexError):
-            print('Handled exception...')
-
-    def save_data(self):
-        """Save blockchain + open transactions snapshot to a file."""
-        try:
-            with open('tmp_data/blockchain-{}.txt'.format(self.node_id), mode='w') as f:
-                saveable_chain = [
-                    block.__dict__
-                    for block in [
-                        Block(
-                            b.index,
-                            b.previous_hash,
-                            [tx.__dict__ for tx in b.transactions],
-                            b.proof,
-                            b.timestamp
-                        )
-                        for b in self.__chain
-                    ]
-                ]
-                f.write(json.dumps(saveable_chain))
-                f.write('\n')
-                saveable_tx = [
-                    tx.__dict__
-                    for tx in self.__open_transactions
-                ]
-                f.write(json.dumps(saveable_tx))
-                f.write('\n')
-                f.write(json.dumps(list(self.__peer_nodes)))
-        except IOError:
-            print('Saving failed!')
-
-    def proof_of_work(self):
-        """Generate a proof of work for the open transactions, the hash of the previous block and a random number (which is guessed until it fits)."""
-        last_block = self.__chain[-1]
-        last_hash = hash_block(last_block)
-        proof = 0
-
-        while not Verification.valid_proof(self.__open_transactions, last_hash, proof):
-            proof += 1
-
-        return proof
 
     def get_balance(self, sender=None):
         """Calculate and return the balance for a participant."""
@@ -187,9 +111,9 @@ class Blockchain:
         transaction = Transaction(sender, recipient, signature, amount)
         if Verification.verify_transaction(transaction, self.get_balance):
             self.__open_transactions.append(transaction)
-            self.save_data()
+            self.__save_data()
             if not is_receiving:
-                if self.broadcast_transaction(transaction) == False:
+                if self.__broadcast_transaction(transaction) == False:
                     return False
             return True
         return False
@@ -201,7 +125,7 @@ class Blockchain:
 
         last_block = self.__chain[-1]
         hashed_block = hash_block(last_block)
-        proof = self.proof_of_work()
+        proof = self.__get_proof_of_work()
         reward_transaction = Transaction(
             'MINING', self.public_key, '', MINING_REWARD)
 
@@ -217,8 +141,8 @@ class Blockchain:
         self.__chain.append(block)
         self.__open_transactions = []
 
-        self.save_data()
-        self.broadcast_block(block)
+        self.__save_data()
+        self.__broadcast_block(block)
 
         return block
 
@@ -250,7 +174,7 @@ class Blockchain:
 
         self.__clear_open_transactions(incoming_block)
 
-        self.save_data()
+        self.__save_data()
         return True
 
     def add_peer_node(self, node):
@@ -260,7 +184,7 @@ class Blockchain:
             :node: The node URL which should be added.
         """
         self.__peer_nodes.add(node)
-        self.save_data()
+        self.__save_data()
 
     def remove_peer_node(self, node):
         """Removes a node from the peer node set.
@@ -269,13 +193,89 @@ class Blockchain:
             :node: The node URL which should be removeded.
         """
         self.__peer_nodes.discard(node)
-        self.save_data()
+        self.__save_data()
 
     def get_peer_nodes(self):
         """Return a list of all connected peer nodes."""
         return list(self.__peer_nodes)
 
-    def broadcast_transaction(self, transaction):
+    def __load_data(self):
+        """Initialize blockchain + open transactions data from a file."""
+        try:
+            with open('tmp_data/blockchain-{}.txt'.format(self.node_id), mode='r') as f:
+                file_content = f.readlines()
+                blockchain = json.loads(file_content[0][:-1])
+                updated_blockchain = []
+                for block in blockchain:
+                    converted_tx = [
+                        Transaction(
+                            tx['sender'], tx['recipient'], tx['signature'], tx['amount'])
+                        for tx in block['transactions']
+                    ]
+                    updated_block = Block(
+                        block['index'],
+                        block['previous_hash'],
+                        converted_tx,
+                        block['proof'],
+                        block['timestamp']
+                    )
+                    updated_blockchain.append(updated_block)
+                self.__chain = updated_blockchain
+
+                open_transactions = json.loads(file_content[1][:-1])
+                updated_transactions = []
+                for tx in open_transactions:
+                    updated_transaction = Transaction(
+                        tx['sender'], tx['recipient'], tx['signature'], tx['amount'])
+                    updated_transactions.append(updated_transaction)
+                self.__open_transactions = updated_transactions
+
+                peer_nodes = json.loads(file_content[2])
+                self.__peer_nodes = set(peer_nodes)
+        except (IOError, IndexError):
+            print('Handled exception...')
+
+    def __save_data(self):
+        """Save blockchain + open transactions snapshot to a file."""
+        try:
+            with open('tmp_data/blockchain-{}.txt'.format(self.node_id), mode='w') as f:
+                saveable_chain = [
+                    block.__dict__
+                    for block in [
+                        Block(
+                            b.index,
+                            b.previous_hash,
+                            [tx.__dict__ for tx in b.transactions],
+                            b.proof,
+                            b.timestamp
+                        )
+                        for b in self.__chain
+                    ]
+                ]
+                f.write(json.dumps(saveable_chain))
+                f.write('\n')
+                saveable_tx = [
+                    tx.__dict__
+                    for tx in self.__open_transactions
+                ]
+                f.write(json.dumps(saveable_tx))
+                f.write('\n')
+                f.write(json.dumps(list(self.__peer_nodes)))
+        except IOError:
+            print('Saving failed!')
+
+    def __get_proof_of_work(self):
+        """Generate a proof of work for the open transactions, the hash of the previous block and a random number (which is guessed until it fits)."""
+        last_block = self.__chain[-1]
+        last_hash = hash_block(last_block)
+        proof = 0
+
+        while not Verification.valid_proof(self.__open_transactions, last_hash, proof):
+            proof += 1
+
+        return proof
+
+    def __broadcast_transaction(self, transaction):
         for node in self.__peer_nodes:
             url = 'http://{}/broadcast-transaction'.format(node)
 
@@ -294,7 +294,7 @@ class Blockchain:
 
         return True
 
-    def broadcast_block(self, block):
+    def __broadcast_block(self, block):
         converted_block = block.__dict__.copy()
         converted_block['transactions'] = [
             tx.__dict__
