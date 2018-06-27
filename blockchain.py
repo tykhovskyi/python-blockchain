@@ -147,20 +147,9 @@ class Blockchain:
         return block
 
     def add_block(self, block):
-        transactions = [
-            Transaction(tx['sender'],
-                        tx['recipient'],
-                        tx['signature'],
-                        tx['amount'])
-            for tx in block['transactions']
-        ]
-        incoming_block = Block(block['index'],
-                                block['previous_hash'],
-                                transactions,
-                                block['proof'],
-                                block['timestamp'],)
+        incoming_block = Block.from_dictionary(block)
 
-        proof_is_valid = Verification.valid_proof(transactions[:-1],
+        proof_is_valid = Verification.valid_proof(incoming_block.transactions[:-1],
                                                   incoming_block.previous_hash,
                                                   incoming_block.proof)
         if not proof_is_valid:
@@ -207,18 +196,7 @@ class Blockchain:
                 blockchain = json.loads(file_content[0][:-1])
                 updated_blockchain = []
                 for block in blockchain:
-                    converted_tx = [
-                        Transaction(
-                            tx['sender'], tx['recipient'], tx['signature'], tx['amount'])
-                        for tx in block['transactions']
-                    ]
-                    updated_block = Block(
-                        block['index'],
-                        block['previous_hash'],
-                        converted_tx,
-                        block['proof'],
-                        block['timestamp']
-                    )
+                    updated_block = Block.from_dictionary(block)
                     updated_blockchain.append(updated_block)
                 self.__chain = updated_blockchain
 
