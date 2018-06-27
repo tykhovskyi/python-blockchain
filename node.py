@@ -149,23 +149,34 @@ def broadcast_block():
         response = {'message': 'Some data is missing!'}
         return jsonify(response), 400
     
-    block = request_json['block']
-    if block['index'] == blockchain.get_last_index() + 1:
-        if blockchain.add_block(block):
+    incoming_block = request_json['block']
+    # [1],[2],[3] == [1],[2],[3]
+    if incoming_block['index'] == blockchain.get_last_index() + 1:
+        if blockchain.add_block(incoming_block):
             response = {'message': 'Successfully added new block.'}
             return jsonify(response), 201
         else:
             response = {'message': 'Block seems invalid!'}
-            return jsonify(response), 500
-    elif block['index'] > blockchain.get_last_index():
-        print('---------- case2')
+            print(response['message'])
+            return jsonify(response), 409
+    # [1],[2],[3],[4],[5] > [1],[2],[3]
+    elif incoming_block['index'] > blockchain.get_last_index():
+        response = {'message': 'Blockchain seems to be differ from local blockchain, block not added!'}
+        blockchain.resolve_conflicts = True
+        print(response['message'])
+        return jsonify(response), 200
+    # [1],[2] < [1],[2],[3],[4],[5]
     else:
         response = {'message': 'Blockchain seems to be shorter, block not added!'}
+        print(response['message'])
         return jsonify(response), 409
 
 
 @app.route('/mine', methods=['POST'])
 def mine():
+    if blockchain.resolve_conflicts:
+        response = {'message': 'Resolve conflicts first, block not added!'}
+        return jsonify(response), 409
     mined_block = blockchain.mine_block()
     if mined_block != None:
         dict_block = mined_block.__dict__.copy()

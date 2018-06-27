@@ -24,6 +24,7 @@ class Blockchain:
         self.__peer_nodes = set()
         self.public_key = public_key
         self.node_id = node_id
+        self.resolve_conflicts = False
         self.load_data()
 
     def get_chain(self):
@@ -223,29 +224,32 @@ class Blockchain:
 
     def add_block(self, block):
         transactions = [
-            Transaction(tx['sender'], 
-                        tx['recipient'], 
-                        tx['signature'], 
+            Transaction(tx['sender'],
+                        tx['recipient'],
+                        tx['signature'],
                         tx['amount'])
             for tx in block['transactions']
         ]
+        incoming_block = Block(block['index'],
+                                block['previous_hash'],
+                                transactions,
+                                block['proof'],
+                                block['timestamp'],)
 
-        proof_is_valid = Verification.valid_proof(transactions[:-1], 
-                                                  block['previous_hash'], 
-                                                  block['proof'])
+        proof_is_valid = Verification.valid_proof(transactions[:-1],
+                                                  incoming_block.previous_hash,
+                                                  incoming_block.proof)
         if not proof_is_valid:
             return False
 
-        hashes_match = hash_block(self.__chain[-1]) == block['previous_hash']
+        hashes_match = hash_block(self.__chain[-1]) == incoming_block.previous_hash
         if not hashes_match:
             return False
 
-        converted_block = Block(block['index'], 
-                                block['previous_hash'], 
-                                transactions, 
-                                block['proof'], 
-                                block['timestamp'],)
-        self.__chain.append(converted_block)
+        self.__chain.append(incoming_block)
+
+        self.__clear_open_transactions(incoming_block)
+
         self.save_data()
         return True
 
@@ -303,8 +307,20 @@ class Blockchain:
                 response = requests.post(url, json={'block': converted_block})
                 if response.status_code == 400 or response.status_code == 500:
                     print('Block declined, need resolving!')
-                    return False
+                if response.status_code == 409:
+                    self.resolve_conflicts = True
             except requests.exceptions.ConnectionError:
                 continue
 
         return True
+
+    def __clear_open_transactions(self, incoming_block):
+        """Removes open transactions that contain in the incoming block."""
+        stored_transactions = self.__open_transactions[:]
+        for itx in incoming_block.transactions:
+            for opentx in stored_transactions:
+                if opentx.sender == itx.sender and opentx.recipient == itx.recipient and opentx.amount == itx.amount and opentx.signature == itx.signature:
+                    try:
+                        self.__open_transactions.remove(opentx)
+                    except ValueError:
+                        print('Item was already removed')
