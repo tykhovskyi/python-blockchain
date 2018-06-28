@@ -39,8 +39,8 @@ class Blockchain:
 
     def get_balance(self, sender=None):
         """Calculate and return the balance for a participant."""
-        if sender == None:
-            if self.public_key == None:
+        if sender is None:
+            if self.public_key is None:
                 return None
             participant = self.public_key
         else:
@@ -105,7 +105,7 @@ class Blockchain:
             :signature: The signature of the transaction.
             :amount: The amount of coins sent with the transaction (default = 1.0)
         """
-        if self.public_key == None:
+        if self.public_key is None:
             return False
 
         transaction = Transaction(sender, recipient, signature, amount)
@@ -113,14 +113,14 @@ class Blockchain:
             self.__open_transactions.append(transaction)
             self.__save_data()
             if not is_receiving:
-                if self.__broadcast_transaction(transaction) == False:
+                if self.__broadcast_transaction(transaction) is False:
                     return False
             return True
         return False
 
     def mine_block(self):
         """ Create a new block and add open transactions to it. """
-        if self.public_key == None:
+        if self.public_key is None:
             return None
 
         last_block = self.__chain[-1]
@@ -148,7 +148,7 @@ class Blockchain:
 
     def add_block(self, block):
         incoming_block = Block.from_dictionary(block)
-        
+
         proof_is_valid = Verification.valid_proof(incoming_block.transactions[:-1],
                                                   incoming_block.previous_hash,
                                                   incoming_block.proof)
@@ -274,7 +274,8 @@ class Blockchain:
             print('Saving failed!')
 
     def __get_proof_of_work(self):
-        """Generate a proof of work for the open transactions, the hash of the previous block and a random number (which is guessed until it fits)."""
+        """Generate a proof of work for the open transactions, the hash of the previous block and
+        a random number (which is guessed until it fits)."""
         last_block = self.__chain[-1]
         last_hash = hash_block(last_block)
         proof = 0
@@ -328,7 +329,10 @@ class Blockchain:
         stored_transactions = self.__open_transactions[:]
         for itx in incoming_block.transactions:
             for opentx in stored_transactions:
-                if opentx.sender == itx.sender and opentx.recipient == itx.recipient and opentx.amount == itx.amount and opentx.signature == itx.signature:
+                if (opentx.sender == itx.sender and
+                        opentx.recipient == itx.recipient and
+                        opentx.amount == itx.amount and
+                        opentx.signature == itx.signature):
                     try:
                         self.__open_transactions.remove(opentx)
                     except ValueError:
